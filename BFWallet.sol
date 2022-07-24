@@ -7,10 +7,12 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./BFOperator.sol";
 
-contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator {
+contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, ReentrancyGuard {
 
     //=====================================
     event ReceiveBNB(
@@ -191,6 +193,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator {
         string memory message
     )
         external
+        nonReentrant
         onlyOperators
     {
         uint256 totalBNB = address(this).balance;
@@ -210,6 +213,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator {
         string memory message
     )
         external
+        nonReentrant
         onlyOperators
     {
         require(amount <= tokenWithdrawalLimit, "withdraw amount exceeds withdrawal limit");
@@ -226,6 +230,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator {
         string memory message
     )
         external
+        nonReentrant
         onlyOperators
     {
         require(itemWithdrawalLimit > 0, "Cannot withdraw item now");
@@ -243,6 +248,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator {
         string memory message
     )
         external
+        nonReentrant
         onlyOperators
     {
         IERC1155 item = IERC1155(tokenAddress);

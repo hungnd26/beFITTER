@@ -117,11 +117,27 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
     uint256 BNBWithdrawalLimit;
     uint256 itemWithdrawalLimit;
 
+    bool isPaused;
+
     constructor() {
         _operators[msg.sender] = true;
         tokenWithdrawalLimit = 1000000000 * 10**18;
         BNBWithdrawalLimit = 1000 * 10**18;
         itemWithdrawalLimit = 1;
+        isPaused = false;
+    }
+
+    function pause() external onlyOwner {
+        isPaused = true;
+    }
+
+    function unpause() external onlyOwner {
+        isPaused = false;
+    }
+
+    modifier notPaused() {
+        require(isPaused == false, "paused");
+        _;
     }
 
     function setTokenWithdrawalLimit(uint256 amount)
@@ -149,7 +165,11 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         emit ReceiveBNB(msg.sender, msg.value);
     }
 
-    function depositBNB(string memory message) external payable {
+    function depositBNB(string memory message) 
+        external
+        payable
+        notPaused
+    {
         emit DepositBNB(msg.sender, msg.value, message);
     }
 
@@ -157,7 +177,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         address tokenAddress,
         uint256 amount,
         string memory message
-    ) external {
+    ) external notPaused {
         IERC20 token = IERC20(tokenAddress);
         token.transferFrom(msg.sender, address(this), amount);
 
@@ -168,7 +188,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         address tokenAddress,
         uint256 tokenId,
         string memory message
-    ) external {
+    ) external notPaused {
         IERC721 item = IERC721(tokenAddress);
         item.transferFrom(msg.sender, address(this), tokenId);
 
@@ -180,7 +200,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         uint256 tokenId,
         uint256 amount,
         string memory message
-    ) external {
+    ) external notPaused {
         IERC1155 item = IERC1155(tokenAddress);
         item.safeTransferFrom(msg.sender, address(this), tokenId, amount, "0x00");
 
@@ -193,8 +213,9 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         string memory message
     )
         external
-        nonReentrant
         onlyOperators
+        nonReentrant
+        notPaused
     {
         uint256 totalBNB = address(this).balance;
         require(amount <= totalBNB, "withdraw amount exceeds wallet balance");
@@ -213,8 +234,9 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         string memory message
     )
         external
-        nonReentrant
         onlyOperators
+        nonReentrant
+        notPaused
     {
         require(amount <= tokenWithdrawalLimit, "withdraw amount exceeds withdrawal limit");
         IERC20 token = IERC20(tokenAddress);
@@ -230,8 +252,9 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         string memory message
     )
         external
-        nonReentrant
         onlyOperators
+        nonReentrant
+        notPaused
     {
         require(itemWithdrawalLimit > 0, "Cannot withdraw item now");
         IERC721 item = IERC721(tokenAddress);
@@ -248,8 +271,9 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         string memory message
     )
         external
-        nonReentrant
         onlyOperators
+        nonReentrant
+        notPaused
     {
         IERC1155 item = IERC1155(tokenAddress);
         item.safeTransferFrom(address(this), to, tokenId, amount, "0x00");
@@ -262,7 +286,8 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         string memory message
     )
         external payable
-        onlyOperators
+        nonReentrant
+        notPaused
     {
         uint256 amount = msg.value;
         require(amount > 0, "BNB amount must not be zero");
@@ -279,7 +304,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         address tokenAddress,
         uint256 amount,
         string memory message
-    ) external {
+    ) external notPaused nonReentrant {
         IERC20 token = IERC20(tokenAddress);
         require(msg.sender == from, "caller is not token owner nor approved");
         token.transferFrom(from, to, amount);
@@ -293,7 +318,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         address tokenAddress,
         uint256 tokenId,
         string memory message
-    ) external {
+    ) external notPaused nonReentrant {
         IERC721 item = IERC721(tokenAddress);
         require(msg.sender == from, "caller is not token owner nor approved");
         item.transferFrom(from, to, tokenId);
@@ -308,7 +333,7 @@ contract BeFitterWallet is ERC721Holder, ERC1155Holder, BeFitterOperator, Reentr
         uint256 tokenId,
         uint256 amount,
         string memory message
-    ) external {
+    ) external notPaused nonReentrant {
         IERC1155 item = IERC1155(tokenAddress);
         require(msg.sender == from, "caller is not token owner nor approved");
         item.safeTransferFrom(from, to, tokenId, amount, "0x00");
